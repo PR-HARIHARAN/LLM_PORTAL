@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #1A202C;
+            color: #E2E8F0;
+            padding-top: 64px; /* Add padding to account for fixed navbar */
+        }
+        .nav-bar {
+            background-color: #2D3748;
+            border-color: #4A5568;
+            height: 64px; /* Explicitly set navbar height */
+        }
+        .card {
+            background-color: #2D3748;
+            border: 1px solid #4A5568;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .dropdown-menu {
+            background-color: #2D3748;
+            border: 1px solid #4A5568;
+        }
+        .dropdown-item {
+            color: #E2E8F0;
+        }
+        .dropdown-item:hover {
+            background-color: #4A5568;
+        }
+        .btn-blue {
+            background-color: #61afef;
+            color: #1A202C;
+        }
+        .btn-blue:hover {
+            background-color: #4998d6;
+        }
+        .btn-green {
+            background-color: #98C379;
+            color: #1A202C;
+        }
+        .btn-green:hover {
+            background-color: #7fa96a;
+        }
+        .icon {
+            color: #61afef;
+        }
+    </style>
+</head>
+<body>
+    <nav class="fixed top-0 z-50 w-full nav-bar">
+        <div class="px-3 py-3 lg:px-5 lg:pl-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap">Admin Dashboard</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex items-center ml-3">
+                        <div>
+                            <button type="button" class="flex text-sm bg-gray-700 rounded-full focus:ring-4 focus:ring-gray-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
+                                <span class="sr-only">Open user menu</span>
+                                <i class="fas fa-user-circle text-2xl icon"></i>
+                            </button>
+                        </div>
+                        <div class="z-50 hidden my-4 text-base list-none dropdown-menu rounded shadow" id="dropdown-user">
+                            <ul class="py-1" role="none">
+                                <li>
+                                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm dropdown-item hover:bg-gray-600" role="menuitem">Sign out</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="p-4">
+        <div class="p-4 block sm:flex items-center justify-between border-b border-gray-700">
+            <div class="mb-1">
+                <div class="mb-4">
+                    <h1 class="text-xl font-semibold text-gray-100 sm:text-2xl"> Welcome, {{ session['portal_id'] }} ✨</h1>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 mb-6 xl:grid-cols-2 2xl:grid-cols-3 mt-4">
+            <!-- Completion Status Card -->
+            <div class="p-4 card rounded-lg shadow sm:p-6 xl:p-8">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl sm:text-3xl font-bold text-gray-100">
+                            <i class="fas fa-check-circle text-4xl icon"></i>
+                        </span>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-2xl font-bold text-gray-100">Completion Status</dt>
+                            <dd class="flex items-center text-sm font-normal text-gray-400">
+                                Manage student completion criteria
+                            </dd>
+                        </dl>
+                        <a href="{{ url_for('completion_status') }}" class="btn-blue font-medium rounded-lg text-sm px-5 py-2.5 mt-4 inline-block">
+                            Manage
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat with LLM Card -->
+            <div class="p-4 card rounded-lg shadow sm:p-6 xl:p-8">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl sm:text-3xl font-bold text-gray-100">
+                            <i class="fas fa-comments text-4xl icon"></i>
+                        </span>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-2xl font-bold text-gray-100">Chat with LLM</dt>
+                            <dd class="flex items-center text-sm font-normal text-gray-400">
+                                Interact with AI assistant
+                            </dd>
+                        </dl>
+                        <a href="{{ url_for('chat') }}" class="btn-green font-medium rounded-lg text-sm px-5 py-2.5 mt-4 inline-block">
+                            Start Chat
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

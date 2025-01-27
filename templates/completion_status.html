@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completion Criteria</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            background-color: #1A202C;
+            color: #E2E8F0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .nav-bar {
+            background-color: #2D3748;
+            border-color: #4A5568;
+            height: 64px;
+        }
+        
+        .card {
+            background-color: #2D3748;
+            border: 1px solid #4A5568;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .sidebar {
+            background-color: #2D3748;
+            border-right: 1px solid #4A5568;
+            height: calc(100vh - 64px);
+            width: 0;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            overflow-x: hidden;
+            transition: width 0.3s ease-in-out;
+            z-index: 40;
+        }
+
+        .sidebar.open {
+            width: 250px;
+        }
+
+        .sidebar button {
+            background-color: #4A5568;
+            color: #E2E8F0;
+            border: none;
+            padding: 1rem;
+            width: 90%;
+            margin: 0.5rem auto;
+            display: block;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar button:hover {
+            background-color: #61afef;
+        }
+
+        .toggle-btn {
+            position: fixed;
+            top: 7px;
+            left: 20px;
+            background: #4A5568;
+            color: #E2E8F0;
+            border: none;
+            border-radius: 50%;
+            height: 50px;
+            width: 50px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .content {
+            margin-left: 0;
+            padding: 2rem;
+            transition: margin-left 0.3s ease-in-out;
+            margin-top: 64px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .sidebar.open ~ .content {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+        }
+
+        .icon {
+            color: #61afef;
+        }
+
+        h1 {
+            color: #E2E8F0;
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-top: 1rem;
+        }
+
+        form {
+            background-color: #2D3748;
+            border: 1px solid #4A5568;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 800px;
+            margin: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background-color: #2D3748;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background-color: #4A5568;
+            color: #E2E8F0;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            color: #E2E8F0;
+            padding: 12px;
+            border-bottom: 1px solid #4A5568;
+        }
+
+        tr:hover {
+            background-color: #4A5568;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #4A5568;
+            color: #E2E8F0;
+            border: 1px solid #61afef;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #61afef;
+            box-shadow: 0 0 0 2px rgba(97, 175, 239, 0.2);
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 1rem;
+            background-color: #61afef;
+            color: #1A202C;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #4998d6;
+        }
+
+        .loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 999;
+            display: none;
+        }
+
+        .loading-spinner div {
+            width: 40px;
+            height: 40px;
+            border: 5px solid #61afef;
+            border-top: 5px solid #4998d6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .page-header {
+            margin-left: 70px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 z-50 w-full nav-bar">
+        <div class="px-3 py-3 lg:px-5 lg:pl-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap page-header">Completion Criteria</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex items-center ml-3">
+                        <div>
+                            <button type="button" class="flex text-sm bg-gray-700 rounded-full focus:ring-4 focus:ring-gray-600" aria-expanded="false" data-dropdown-toggle="dropdown-user">
+                                <span class="sr-only">Open user menu</span>
+                                <i class="fas fa-user-circle text-2xl icon"></i>
+                            </button>
+                        </div>
+                        <div class="z-50 hidden my-4 text-base list-none dropdown-menu rounded shadow" id="dropdown-user">
+                            <ul class="py-1" role="none">
+                                <li>
+                                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm dropdown-item hover:bg-gray-600" role="menuitem">Sign out</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <button onclick="showLoaderAndNavigate('/admin_home')">
+            <i class="fas fa-home mr-2"></i> Home
+        </button>
+       
+        <button onclick="showLoaderAndNavigate('/llm')">
+            <i class="fas fa-robot mr-2"></i> Go to LLM
+        </button>
+        
+        <button onclick="showLoaderAndNavigate('/logout')">
+            <i class="fas fa-sign-out-alt mr-2"></i> Logout
+        </button>
+    </div>
+
+    <!-- Toggle Button -->
+    <button class="toggle-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Content -->
+    <div class="content">
+        <h1>Edit Completion Criteria</h1>
+        <form action="/completion_status" method="POST" onsubmit="showLoader()">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject, score in scores.items() %}
+                    <tr>
+                        <td>{{ subject }}</td>
+                        <td>
+                            <input type="number" name="{{ subject }}" value="{{ score }}" required>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit">Save Changes</button>
+        </form>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        function showLoaderAndNavigate(url) {
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) {
+                spinner.style.display = 'block';
+            }
+            setTimeout(() => {
+                window.location.href = url;
+            }, 300);
+        }
+
+        function showLoader() {
+            const loader = document.getElementById('loadingSpinner');
+            if (loader) {
+                loader.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

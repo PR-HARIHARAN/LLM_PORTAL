@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Clone</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Existing styles */
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #1a1a1a;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        .sql-query {
+            color: #61afef;
+            font-family: monospace;
+        }
+        .data-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            margin-top: 1.5rem;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            background: #2D3748;
+            padding: 1rem;
+            border: 1px solid #4A5568;
+        }
+
+        .data-image:hover {
+            transform: scale(1.02);
+        }
+
+        .message-container {
+            max-width: 90%;
+            margin: 1.5rem auto;
+            background: #1A202C;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* New styles for icons and animations */
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #4A5568;
+        }
+
+        .user-avatar {
+            background: #4299e1;
+        }
+
+        .bot-avatar {
+            background: #48bb78;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px;
+            background: #2D3748;
+            border-radius: 12px;
+            margin-top: 8px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #9CA3AF;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .message-content {
+            flex-grow: 1;
+        }
+
+        /* Existing modal styles */
+        .image-container {
+            position: relative;
+            background: #2D3748;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .image-loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 4px solid #4A5568;
+            border-top: 4px solid #63B3ED;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 90%;
+            max-height: 90vh;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #FC8181;
+            text-align: center;
+            padding: 1rem;
+            background: #2D3748;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        /* Message fade-in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-container {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-800 text-white min-h-screen">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-gray-900 p-4">
+            <button onclick="startNewChat()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mb-4">
+                + New Chat
+            </button>
+            <div id="chatHistory" class="overflow-y-auto h-full">
+                <!-- Chat history will be populated here -->
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <div id="chatContainer" class="flex-1 p-4 overflow-y-auto">
+                <!-- Messages will appear here -->
+            </div>
+            
+            <!-- Input Area -->
+            <div class="p-4 border-t border-gray-700">
+                <form id="chatForm" class="flex items-center">
+                    <input type="text" id="userInput" 
+                           class="flex-1 bg-gray-700 rounded-l p-3 outline-none" 
+                           placeholder="Send a message...">
+                    <button type="submit" 
+                            class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-r font-bold">
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="imageModal" class="image-modal" onclick="closeModal()">
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script>
+        let currentChatId = null;
+        let isTyping = false;
+
+        function startNewChat() {
+            currentChatId = Date.now();
+            const chatContainer = document.getElementById('chatContainer');
+
+            chatContainer.innerHTML = `
+                <div id="welcomeMessage" class="flex items-center justify-center h-full text-center text-white-400">
+                    <span id="typewriter" 
+                          class="text-xl font-bold" 
+                          style="font-family: 'Tw Cen MT Condensed Bold',Arial, sans-serif;"></span>
+                </div>
+            `;
+
+            const message = "Welcome! How can I assist you today?";
+            const typewriterElement = document.getElementById('typewriter');
+            if (typewriterElement) {
+                typewriterElement.textContent = '';
+                let charIndex = 0;
+
+                const typeEffect = () => {
+                    if (charIndex < message.length) {
+                        typewriterElement.textContent += message[charIndex];
+                        charIndex++;
+                        setTimeout(typeEffect, 50);
+                    }
+                };
+
+                typeEffect();
+            }
+            console.log("Starting new chat:", currentChatId);
+            loadChatHistory();
+        }
+
+        function addMessage(content, sender, imagePath = null) {
+            const chatContainer = document.getElementById('chatContainer');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+
+            if (welcomeMessage) {
+                chatContainer.removeChild(welcomeMessage);
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-container ${sender === 'user' ? 'ml-auto bg-gray-700' : 'bg-gray-600'}`;
+            
+            const avatarContent = sender === 'user' 
+                ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>';
+
+            let messageContent = `
+                <div class="avatar ${sender === 'user' ? 'user-avatar' : 'bot-avatar'}">
+                    ${avatarContent}
+                </div>
+                <div class="message-content">
+                    <p class="mb-2">${content}</p>
+            `;
+            
+            if (imagePath) {
+                messageContent += `
+                    <div class="image-container">
+                        <div class="image-loader"></div>
+                        <img src="${imagePath}" 
+                             alt="Data Visualization" 
+                             class="data-image"
+                             onclick="openModal(this.src)"
+                             onload="this.previousElementSibling.style.display='none'"
+                             onerror="handleImageError(this)">
+                    </div>`;
+            }
+
+            messageContent += '</div>';
+            messageDiv.innerHTML = messageContent;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            if (!isTyping) {
+                isTyping = true;
+                const chatContainer = document.getElementById('chatContainer');
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message-container bg-gray-600';
+                typingDiv.id = 'typingIndicator';
+                
+                typingDiv.innerHTML = `
+                    <div class="avatar bot-avatar">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                `;
+                
+                chatContainer.appendChild(typingDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+            isTyping = false;
+        }
+
+        // Existing functions remain the same
+        function handleImageError(img) {
+            img.previousElementSibling.style.display = 'none';
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = 'Failed to load image';
+            img.parentNode.appendChild(errorDiv);
+            img.style.display = 'none';
+        }
+
+        function openModal(src) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = "block";
+            modalImg.src = src;
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = "none";
+        }
+
+        async function loadChat(chatId) {
+            try {
+                console.log("Loading chat:", chatId);
+                const response = await fetch(`/api/chats/${chatId}`);
+                const messages = await response.json();
+                console.log("Messages received:", messages);
+
+                const chatContainer = document.getElementById('chatContainer');
+                chatContainer.innerHTML = '';
+
+                if (messages && messages.length > 0) {
+                    messages.forEach(msg => {
+                        if (msg.question) {
+                            addMessage(msg.question, 'user');
+                        }
+                        if (msg.response) {
+                            addMessage(msg.response, 'bot', msg.image_path);
+                        }
+                    });
+                } else {
+                    addMessage('No messages found', 'system');
+                }
+            } catch (error) {
+                console.error("Error loading chat:", error);
+                const errorMessage = error.response ? await error.response.text() : error.message;
+                console.error("Detailed error:", errorMessage);
+                addMessage(`Error loading chat: ${errorMessage}`, 'system');
+            }
+        }
+
+        async function loadChatHistory() {
+            try {
+                const response = await fetch('/api/chats');
+                const chats = await response.json();
+                console.log("Chat history:", chats);
+
+                const chatHistory = document.getElementById('chatHistory');
+                chatHistory.innerHTML = '';
+
+                chats.forEach(chat => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-600';
+                    
+                    const timestamp = new Date(chat.timestamp);
+                    const formattedDate = timestamp.toLocaleString();
+
+                    div.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold">${formattedDate}</span>
+                            <span class="text-xs text-gray-400 truncate">
+                                ${chat.last_message || 'New Chat'}
+                            </span>
+                        </div>
+                    `;
+                    
+                    div.onclick = () => {
+                        console.log("Clicking chat:", chat.chat_id);
+                        loadChat(chat.chat_id);
+                    };
+                    chatHistory.appendChild(div);
+                });
+            } catch (error) {
+                console.error("Error loading history:", error);
+            }
+        }
+
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            
+            if (!message) return;
+
+            addMessage(message, 'user');
+            userInput.value = '';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message,
+                        chatId: currentChatId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.has_image && data.image_path) {
+                    addMessage(data.reply, 'bot', data.image_path);
+                } else {
+                    addMessage(data.reply, 'bot');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('Sorry, an error occurred.', 'bot');
+            }
+        });
+        
+        // Initialize
+        startNewChat();
+
+        // Load chat history when page loads
+        document.addEventListener('DOMContentLoaded', loadChatHistory);
+    </script>
+</body>
+</html>
